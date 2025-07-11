@@ -10,7 +10,9 @@
     "build": "react-scripts build",
     "start": "node index.js",
     "eject": "react-scripts eject",
-    "vercel-build": "npm run build"
+    "vercel-build": "npm run build",
+    "render-build": "npm install && npm run build",
+    "render-start": "npm start"
   },
   "keywords": [],
   "author": "",

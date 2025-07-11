@@ -8,9 +8,10 @@ const path = require('path');
 const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production' 
-      ? ["https://*.vercel.app", "https://*.vercel.com"] 
+      ? true  // Allow all origins in production
       : ["http://localhost:3000", "http://localhost:3001", "http://localhost:5000"],
-    methods: ["GET", "POST"]
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 

@@ -8,8 +8,7 @@ const socketUrl = process.env.NODE_ENV === 'production'
   : 'http://localhost:3000';
 
 const socket = io(socketUrl, {
-  path: process.env.NODE_ENV === 'production' ? '/api/socket' : '/socket.io',
-  transports: process.env.NODE_ENV === 'production' ? ['polling'] : ['websocket', 'polling']
+  transports: ['websocket', 'polling']
 });
 
 function App() {
