@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import io from 'socket.io-client';
 import './App.css';
 
@@ -514,6 +514,14 @@ function CollaborativeCanvas({ room, username, onClose }) {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [startPos, setStartPos] = useState(null);
 
+  const saveToHistory = useCallback((canvas) => {
+    const imageData = canvas.toDataURL();
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(imageData);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  }, [history, historyIndex]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -571,14 +579,6 @@ function CollaborativeCanvas({ room, username, onClose }) {
       socket.off('canvas-undo');
     };
   }, [room, saveToHistory]);
-
-  const saveToHistory = (canvas) => {
-    const imageData = canvas.toDataURL();
-    const newHistory = history.slice(0, historyIndex + 1);
-    newHistory.push(imageData);
-    setHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
-  };
 
   const drawLine = (ctx, x1, y1, x2, y2, strokeColor, strokeWidth) => {
     ctx.beginPath();
