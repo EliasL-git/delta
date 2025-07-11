@@ -27,10 +27,5 @@
       "dest": "/index.js"
     }
   ],
-  "functions": {
-    "index.js": {
-      "includeFiles": "build/**"
-    }
-  },
   "outputDirectory": "build"
 }
