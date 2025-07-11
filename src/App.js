@@ -6,7 +6,11 @@ import './App.css';
 const socketUrl = process.env.NODE_ENV === 'production' 
   ? window.location.origin 
   : 'http://localhost:3000';
-const socket = io(socketUrl);
+
+const socket = io(socketUrl, {
+  path: process.env.NODE_ENV === 'production' ? '/api/socket' : '/socket.io',
+  transports: process.env.NODE_ENV === 'production' ? ['polling'] : ['websocket', 'polling']
+});
 
 function App() {
   const [room, setRoom] = useState('');

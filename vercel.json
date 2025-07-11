@@ -7,25 +7,21 @@
       "config": {
         "distDir": "build"
       }
-    },
-    {
-      "src": "index.js",
-      "use": "@vercel/node"
     }
   ],
+  "functions": {
+    "api/socket.js": {
+      "maxDuration": 30
+    }
+  },
   "routes": [
     {
-      "src": "/socket.io/(.*)",
-      "dest": "/index.js"
-    },
-    {
       "src": "/api/(.*)",
-      "dest": "/index.js"
+      "dest": "/api/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.js"
+      "dest": "/build/$1"
     }
-  ],
-  "outputDirectory": "build"
+  ]
 }
