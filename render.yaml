@@ -1,11 +1,12 @@
 services:
   - type: web
     name: delta-chat
-    env: node
+    runtime: node
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: ./build.sh
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
     healthCheckPath: /
+    autoDeploy: false
