@@ -570,7 +570,7 @@ function CollaborativeCanvas({ room, username, onClose }) {
       socket.off('canvas-clear');
       socket.off('canvas-undo');
     };
-  }, [room]);
+  }, [room, saveToHistory]);
 
   const saveToHistory = (canvas) => {
     const imageData = canvas.toDataURL();
@@ -637,7 +637,6 @@ function CollaborativeCanvas({ room, username, onClose }) {
 
     if (tool === 'brush' || tool === 'eraser') {
       const drawColor = tool === 'eraser' ? '#000000' : color;
-      const prevCoords = getCoordinates(e);
       const movementX = e.movementX || 0;
       const movementY = e.movementY || 0;
       const prevX = coords.x - movementX;
