@@ -15,6 +15,14 @@ function App() {
   const [username, setUsername] = useState('');
   const [showUsernameModal, setShowUsernameModal] = useState(false);
 
+  // Load settings from localStorage on app start
+  useEffect(() => {
+    const savedUsername = localStorage.getItem('deltaUsername');
+    if (savedUsername) {
+      setUsername(savedUsername);
+    }
+  }, []);
+
   const createRoom = () => {
     setShowUsernameModal(true);
   };
@@ -189,6 +197,8 @@ function Chat({ room, username }) {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [isTyping, setIsTyping] = useState([]);
   const [showCanvas, setShowCanvas] = useState(false);
+  const [showFriendsModal, setShowFriendsModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -365,10 +375,10 @@ function Chat({ room, username }) {
           <button className="btn btn-ghost btn-sm" onClick={toggleCanvas} title="Open Canvas">
             <span>🎨</span>
           </button>
-          <button className="btn btn-ghost btn-sm">
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowFriendsModal(true)} title="Show Friends">
             <span>👥</span>
           </button>
-          <button className="btn btn-ghost btn-sm">
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowSettingsModal(true)} title="Settings">
             <span>⚙️</span>
           </button>
         </div>
@@ -501,6 +511,204 @@ function Chat({ room, username }) {
           onClose={() => setShowCanvas(false)} 
         />
       )}
+      {showFriendsModal && (
+        <FriendsModal
+          onlineUsers={onlineUsers}
+          username={username}
+          onClose={() => setShowFriendsModal(false)}
+        />
+      )}
+      {showSettingsModal && (
+        <SettingsModal
+          onClose={() => setShowSettingsModal(false)}
+          username={username}
+          onUsernameChange={setUsername}
+        />
+      )}
+    </div>
+  );
+}
+
+// Friends modal
+function FriendsModal({ onlineUsers, username, onClose }) {
+  const totalUsers = onlineUsers.length + 1; // +1 for current user
+  
+  return (
+    <div className="modal-overlay">
+      <div className="modal">
+        <div className="modal-header">
+          <h2 className="modal-title">Online Users ({totalUsers})</h2>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <div className="user-list">
+            <div className="user-item current-user">
+              <div className="user-avatar">👤</div>
+              <div className="user-info">
+                <div className="user-name">{username}</div>
+                <div className="user-status">You • Online</div>
+              </div>
+              <div className="user-badge">Host</div>
+            </div>
+            {onlineUsers.map((user, i) => (
+              <div key={user.userId || i} className="user-item">
+                <div className="user-avatar">👤</div>
+                <div className="user-info">
+                  <div className="user-name">{user.username || user.userId}</div>
+                  <div className="user-status">Online • Active</div>
+                </div>
+                <div className="status-indicator online"></div>
+              </div>
+            ))}
+            {onlineUsers.length === 0 && (
+              <div className="empty-state">
+                <p>You're the only one here right now</p>
+                <p className="text-muted">Share the room code to invite others!</p>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-primary" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Settings modal
+function SettingsModal({ onClose, username, onUsernameChange }) {
+  const [tempUsername, setTempUsername] = useState(username);
+  const [notifications, setNotifications] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [theme, setTheme] = useState('dark');
+  
+  // Load settings on modal open
+  useEffect(() => {
+    const savedNotifications = localStorage.getItem('deltaNotifications');
+    const savedSoundEnabled = localStorage.getItem('deltaSoundEnabled');
+    const savedTheme = localStorage.getItem('deltaTheme');
+    
+    if (savedNotifications !== null) {
+      setNotifications(savedNotifications === 'true');
+    }
+    if (savedSoundEnabled !== null) {
+      setSoundEnabled(savedSoundEnabled === 'true');
+    }
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+  }, []);
+  
+  const handleSave = () => {
+    if (tempUsername.trim() && tempUsername !== username) {
+      onUsernameChange(tempUsername.trim());
+      localStorage.setItem('deltaUsername', tempUsername.trim());
+    }
+    localStorage.setItem('deltaNotifications', notifications);
+    localStorage.setItem('deltaSoundEnabled', soundEnabled);
+    localStorage.setItem('deltaTheme', theme);
+    onClose();
+  };
+
+  const exportData = () => {
+    const data = {
+      username,
+      settings: {
+        notifications,
+        soundEnabled,
+        theme
+      },
+      exportDate: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `delta-chat-settings-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal">
+        <div className="modal-header">
+          <h2 className="modal-title">Settings</h2>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <div className="modal-body">
+          <div className="settings-section">
+            <h3>Profile</h3>
+            <div className="form-group">
+              <label htmlFor="username">Username</label>
+              <input
+                id="username"
+                type="text"
+                value={tempUsername}
+                onChange={(e) => setTempUsername(e.target.value)}
+                placeholder="Enter your username"
+                className="form-input"
+              />
+            </div>
+          </div>
+
+          <div className="settings-section">
+            <h3>Notifications</h3>
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={notifications}
+                  onChange={(e) => setNotifications(e.target.checked)}
+                />
+                <span>Enable notifications</span>
+              </label>
+            </div>
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={soundEnabled}
+                  onChange={(e) => setSoundEnabled(e.target.checked)}
+                />
+                <span>Enable sound alerts</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="settings-section">
+            <h3>Appearance</h3>
+            <div className="form-group">
+              <label htmlFor="theme">Theme</label>
+              <select
+                id="theme"
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                className="form-select"
+              >
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+                <option value="auto">Auto</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="settings-section">
+            <h3>Data</h3>
+            <div className="form-group">
+              <button className="btn btn-secondary" onClick={exportData}>
+                Export Settings
+              </button>
+              <small className="text-muted">Download your settings as a JSON file</small>
+            </div>
+          </div>
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleSave}>Save Changes</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -514,6 +722,7 @@ function CollaborativeCanvas({ room, username, onClose }) {
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [startPos, setStartPos] = useState(null);
+  const [lastPos, setLastPos] = useState(null); // Track last position for smooth drawing
 
   const saveToHistory = useCallback((canvas) => {
     const imageData = canvas.toDataURL();
@@ -528,17 +737,26 @@ function CollaborativeCanvas({ room, username, onClose }) {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    
+    // Only initialize canvas if it hasn't been initialized yet
+    if (!canvas.dataset.initialized) {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      canvas.dataset.initialized = 'true';
+      
+      // Save initial state to history
+      saveToHistory(canvas);
+    }
 
-    // Save initial state to history
-    saveToHistory(canvas);
+    console.log('🎨 Setting up canvas listeners for room:', room);
 
     // Listen for drawing events from other users
-    socket.on('canvas-draw', (data) => {
-      if (data.room === room) {
+    const handleCanvasDraw = (data) => {
+      console.log('🎨 Received canvas-draw event:', data);
+      if (data.room === room && canvasRef.current) {
+        const ctx = canvasRef.current.getContext('2d');
         if (data.tool === 'brush' || data.tool === 'eraser') {
           drawLine(ctx, data.prevX, data.prevY, data.currentX, data.currentY, data.color, data.brushSize);
         } else if (data.tool === 'line') {
@@ -549,20 +767,26 @@ function CollaborativeCanvas({ room, username, onClose }) {
           drawRect(ctx, data.x, data.y, data.width, data.height, data.color, data.brushSize);
         }
       }
-    });
+    };
 
-    socket.on('canvas-clear', (data) => {
-      if (data.room === room) {
+    const handleCanvasClear = (data) => {
+      console.log('🎨 Received canvas-clear event:', data);
+      if (data.room === room && canvasRef.current) {
+        const ctx = canvasRef.current.getContext('2d');
+        const canvas = canvasRef.current;
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         setHistory([]);
         setHistoryIndex(-1);
         saveToHistory(canvas);
       }
-    });
+    };
 
-    socket.on('canvas-undo', (data) => {
-      if (data.room === room && data.imageData) {
+    const handleCanvasUndo = (data) => {
+      console.log('🎨 Received canvas-undo event:', data);
+      if (data.room === room && data.imageData && canvasRef.current) {
+        const ctx = canvasRef.current.getContext('2d');
+        const canvas = canvasRef.current;
         const img = new Image();
         img.onload = () => {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -572,12 +796,17 @@ function CollaborativeCanvas({ room, username, onClose }) {
         };
         img.src = data.imageData;
       }
-    });
+    };
+
+    socket.on('canvas-draw', handleCanvasDraw);
+    socket.on('canvas-clear', handleCanvasClear);
+    socket.on('canvas-undo', handleCanvasUndo);
 
     return () => {
-      socket.off('canvas-draw');
-      socket.off('canvas-clear');
-      socket.off('canvas-undo');
+      console.log('🎨 Cleaning up canvas listeners');
+      socket.off('canvas-draw', handleCanvasDraw);
+      socket.off('canvas-clear', handleCanvasClear);
+      socket.off('canvas-undo', handleCanvasUndo);
     };
   }, [room, saveToHistory]);
 
@@ -621,6 +850,7 @@ function CollaborativeCanvas({ room, username, onClose }) {
     setIsDrawing(true);
     const coords = getCoordinates(e);
     setStartPos(coords);
+    setLastPos(coords); // Set initial last position
     
     if (tool === 'brush' || tool === 'eraser') {
       const ctx = canvasRef.current.getContext('2d');
@@ -631,32 +861,42 @@ function CollaborativeCanvas({ room, username, onClose }) {
 
   const draw = (e) => {
     e.preventDefault();
-    if (!isDrawing) return;
+    if (!isDrawing || !lastPos) return;
     
     const coords = getCoordinates(e);
     const ctx = canvasRef.current.getContext('2d');
 
     if (tool === 'brush' || tool === 'eraser') {
       const drawColor = tool === 'eraser' ? '#000000' : color;
-      const movementX = e.movementX || 0;
-      const movementY = e.movementY || 0;
-      const prevX = coords.x - movementX;
-      const prevY = coords.y - movementY;
 
-      drawLine(ctx, prevX, prevY, coords.x, coords.y, drawColor, brushSize);
+      drawLine(ctx, lastPos.x, lastPos.y, coords.x, coords.y, drawColor, brushSize);
 
       // Send drawing data to other users
-      socket.emit('canvas-draw', {
+      console.log('🎨 Sending canvas-draw event:', {
         room,
         tool,
-        prevX,
-        prevY,
+        prevX: lastPos.x,
+        prevY: lastPos.y,
         currentX: coords.x,
         currentY: coords.y,
         color: drawColor,
         brushSize,
         username
       });
+
+      socket.emit('canvas-draw', {
+        room,
+        tool,
+        prevX: lastPos.x,
+        prevY: lastPos.y,
+        currentX: coords.x,
+        currentY: coords.y,
+        color: drawColor,
+        brushSize,
+        username
+      });
+
+      setLastPos(coords); // Update last position for next draw event
     }
   };
 
@@ -664,12 +904,14 @@ function CollaborativeCanvas({ room, username, onClose }) {
     if (!isDrawing) return;
     e?.preventDefault();
     setIsDrawing(false);
+    setLastPos(null); // Reset last position
     
     const coords = getCoordinates(e || {});
     const ctx = canvasRef.current.getContext('2d');
 
     if (tool === 'line' && startPos) {
       drawLine(ctx, startPos.x, startPos.y, coords.x, coords.y, color, brushSize);
+      console.log('🎨 Sending line draw event');
       socket.emit('canvas-draw', {
         room,
         tool: 'line',
@@ -684,6 +926,7 @@ function CollaborativeCanvas({ room, username, onClose }) {
     } else if (tool === 'circle' && startPos) {
       const radius = Math.sqrt(Math.pow(coords.x - startPos.x, 2) + Math.pow(coords.y - startPos.y, 2));
       drawCircle(ctx, startPos.x, startPos.y, radius, color, brushSize);
+      console.log('🎨 Sending circle draw event');
       socket.emit('canvas-draw', {
         room,
         tool: 'circle',
@@ -698,6 +941,7 @@ function CollaborativeCanvas({ room, username, onClose }) {
       const width = coords.x - startPos.x;
       const height = coords.y - startPos.y;
       drawRect(ctx, startPos.x, startPos.y, width, height, color, brushSize);
+      console.log('🎨 Sending rect draw event');
       socket.emit('canvas-draw', {
         room,
         tool: 'rect',
@@ -722,6 +966,7 @@ function CollaborativeCanvas({ room, username, onClose }) {
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
+    console.log('🎨 Sending canvas-clear event');
     socket.emit('canvas-clear', { room, username });
     setHistory([]);
     setHistoryIndex(-1);
