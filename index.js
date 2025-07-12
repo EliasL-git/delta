@@ -16,9 +16,7 @@ const io = new Server(server, {
 });
 
 // Serve static files from React build
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'build')));
-}
+app.use(express.static(path.join(__dirname, 'build')));
 
 const rooms = {};
 
@@ -107,12 +105,10 @@ io.on('connection', (socket) => {
   });
 });
 
-// Serve React app for any other routes in production
-if (process.env.NODE_ENV === 'production') {
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
-  });
-}
+// Serve React app for any other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {

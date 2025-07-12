@@ -7,9 +7,7 @@ const socketUrl = process.env.NODE_ENV === 'production'
   ? window.location.origin 
   : 'http://localhost:3000';
 
-const socket = io(socketUrl, {
-  transports: ['websocket', 'polling']
-});
+const socket = io(socketUrl);
 
 function App() {
   const [room, setRoom] = useState('');

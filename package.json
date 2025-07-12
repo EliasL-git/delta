@@ -9,11 +9,7 @@
     "devserver": "concurrently --names \"SERVER,CLIENT\" --prefix-colors \"blue,green\" \"npm run server\" \"npm run dev\"",
     "build": "react-scripts build",
     "start": "node index.js",
-    "eject": "react-scripts eject",
-    "vercel-build": "npm run build",
-    "render-build": "npm ci && npm run build",
-    "render-start": "npm start",
-    "heroku-postbuild": "npm run build"
+    "eject": "react-scripts eject"
   },
   "keywords": [],
   "author": "",
@@ -24,7 +20,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
-    "express": "^5.1.0",
+    "express": "^4.21.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-scripts": "5.0.1",
