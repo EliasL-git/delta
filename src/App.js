@@ -14,6 +14,7 @@ function App() {
   const [roomCreated, setRoomCreated] = useState(false);
   const [username, setUsername] = useState('');
   const [showUsernameModal, setShowUsernameModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Load settings from localStorage on app start
   useEffect(() => {
@@ -22,6 +23,13 @@ function App() {
       setUsername(savedUsername);
     }
   }, []);
+
+  // Handle username changes and save to localStorage
+  const handleUsernameChange = (newUsername) => {
+    setUsername(newUsername);
+    localStorage.setItem('deltaUsername', newUsername);
+    socket.emit('set username', newUsername);
+  };
 
   const createRoom = () => {
     setShowUsernameModal(true);
@@ -131,13 +139,25 @@ function App() {
           </div>
         </div>
       ) : (
-        <Chat room={room} username={username} />
+        <Chat 
+          room={room} 
+          username={username} 
+          onShowSettings={() => setShowSettingsModal(true)}
+        />
       )}
       
       {showUsernameModal && (
         <UsernameModal
           onSubmit={window.tempRoomToJoin ? handleJoinWithUsername : handleUsernameSubmit}
           onClose={() => setShowUsernameModal(false)}
+        />
+      )}
+      
+      {showSettingsModal && (
+        <SettingsModal
+          onClose={() => setShowSettingsModal(false)}
+          username={username}
+          onUsernameChange={handleUsernameChange}
         />
       )}
     </div>
@@ -191,14 +211,13 @@ function UsernameModal({ onSubmit, onClose }) {
   );
 }
 
-function Chat({ room, username }) {
+function Chat({ room, username, onShowSettings }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [isTyping, setIsTyping] = useState([]);
   const [showCanvas, setShowCanvas] = useState(false);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -378,7 +397,7 @@ function Chat({ room, username }) {
           <button className="btn btn-ghost btn-sm" onClick={() => setShowFriendsModal(true)} title="Show Friends">
             <span>👥</span>
           </button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setShowSettingsModal(true)} title="Settings">
+          <button className="btn btn-ghost btn-sm" onClick={onShowSettings} title="Settings">
             <span>⚙️</span>
           </button>
         </div>
@@ -518,23 +537,16 @@ function Chat({ room, username }) {
           onClose={() => setShowFriendsModal(false)}
         />
       )}
-      {showSettingsModal && (
-        <SettingsModal
-          onClose={() => setShowSettingsModal(false)}
-          username={username}
-          onUsernameChange={setUsername}
-        />
-      )}
     </div>
   );
 }
 
 // Friends modal
-function FriendsModal({ onlineUsers, username, onClose }) {
-  const totalUsers = onlineUsers.length + 1; // +1 for current user
+function FriendsModal({ onlineUsers = [], username, onClose }) {
+  const totalUsers = (onlineUsers?.length || 0) + 1; // +1 for current user
   
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal">
         <div className="modal-header">
           <h2 className="modal-title">Online Users ({totalUsers})</h2>
@@ -545,22 +557,22 @@ function FriendsModal({ onlineUsers, username, onClose }) {
             <div className="user-item current-user">
               <div className="user-avatar">👤</div>
               <div className="user-info">
-                <div className="user-name">{username}</div>
+                <div className="user-name">{username || 'You'}</div>
                 <div className="user-status">You • Online</div>
               </div>
               <div className="user-badge">Host</div>
             </div>
-            {onlineUsers.map((user, i) => (
-              <div key={user.userId || i} className="user-item">
+            {onlineUsers && onlineUsers.map((user, i) => (
+              <div key={user?.userId || i} className="user-item">
                 <div className="user-avatar">👤</div>
                 <div className="user-info">
-                  <div className="user-name">{user.username || user.userId}</div>
+                  <div className="user-name">{user?.username || user?.userId || `User ${i + 1}`}</div>
                   <div className="user-status">Online • Active</div>
                 </div>
                 <div className="status-indicator online"></div>
               </div>
             ))}
-            {onlineUsers.length === 0 && (
+            {(!onlineUsers || onlineUsers.length === 0) && (
               <div className="empty-state">
                 <p>You're the only one here right now</p>
                 <p className="text-muted">Share the room code to invite others!</p>
@@ -578,13 +590,17 @@ function FriendsModal({ onlineUsers, username, onClose }) {
 
 // Settings modal
 function SettingsModal({ onClose, username, onUsernameChange }) {
-  const [tempUsername, setTempUsername] = useState(username);
+  const [tempUsername, setTempUsername] = useState(username || '');
   const [notifications, setNotifications] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [theme, setTheme] = useState('dark');
 
   // Load settings on modal open
   useEffect(() => {
+    // Set the temporary username to current username
+    setTempUsername(username || '');
+    
+    // Load other settings from localStorage
     const savedNotifications = localStorage.getItem('deltaNotifications');
     const savedSoundEnabled = localStorage.getItem('deltaSoundEnabled');
     const savedTheme = localStorage.getItem('deltaTheme');
@@ -598,16 +614,20 @@ function SettingsModal({ onClose, username, onUsernameChange }) {
     if (savedTheme) {
       setTheme(savedTheme);
     }
-  }, []);
+  }, [username]);
 
   const handleSave = () => {
-    if (tempUsername.trim() && tempUsername !== username) {
+    // Only update username if it's changed and valid
+    if (tempUsername.trim() && tempUsername.trim() !== username) {
       onUsernameChange(tempUsername.trim());
-      localStorage.setItem('deltaUsername', tempUsername.trim());
     }
-    localStorage.setItem('deltaNotifications', notifications);
-    localStorage.setItem('deltaSoundEnabled', soundEnabled);
+    
+    // Save other settings to localStorage
+    localStorage.setItem('deltaNotifications', notifications.toString());
+    localStorage.setItem('deltaSoundEnabled', soundEnabled.toString());
     localStorage.setItem('deltaTheme', theme);
+    
+    // Close modal
     onClose();
   };
 
@@ -631,7 +651,7 @@ function SettingsModal({ onClose, username, onUsernameChange }) {
   };
 
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal">
         <div className="modal-header">
           <h2 className="modal-title">Settings</h2>
@@ -649,7 +669,11 @@ function SettingsModal({ onClose, username, onUsernameChange }) {
                 onChange={(e) => setTempUsername(e.target.value)}
                 placeholder="Enter your username"
                 className="form-input"
+                maxLength={20}
               />
+              {tempUsername.trim().length === 0 && (
+                <small className="text-error">Username cannot be empty</small>
+              )}
             </div>
           </div>
 
@@ -706,7 +730,13 @@ function SettingsModal({ onClose, username, onUsernameChange }) {
         </div>
         <div className="modal-actions">
           <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSave}>Save Changes</button>
+          <button 
+            className="btn btn-primary" 
+            onClick={handleSave}
+            disabled={tempUsername.trim().length === 0}
+          >
+            Save Changes
+          </button>
         </div>
       </div>
     </div>

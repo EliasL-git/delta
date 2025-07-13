@@ -919,6 +919,13 @@ body {
   font-size: 0.875rem;
 }
 
+.text-error {
+  color: var(--destructive);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
 /* Enhanced Settings Modal Styles */
 .settings-section {
   margin-bottom: 1.5rem;
