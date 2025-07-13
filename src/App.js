@@ -582,13 +582,13 @@ function SettingsModal({ onClose, username, onUsernameChange }) {
   const [notifications, setNotifications] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [theme, setTheme] = useState('dark');
-  
+
   // Load settings on modal open
   useEffect(() => {
     const savedNotifications = localStorage.getItem('deltaNotifications');
     const savedSoundEnabled = localStorage.getItem('deltaSoundEnabled');
     const savedTheme = localStorage.getItem('deltaTheme');
-    
+
     if (savedNotifications !== null) {
       setNotifications(savedNotifications === 'true');
     }
@@ -599,7 +599,7 @@ function SettingsModal({ onClose, username, onUsernameChange }) {
       setTheme(savedTheme);
     }
   }, []);
-  
+
   const handleSave = () => {
     if (tempUsername.trim() && tempUsername !== username) {
       onUsernameChange(tempUsername.trim());
