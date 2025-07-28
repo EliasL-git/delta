@@ -29,7 +29,11 @@ io.on('connection', (socket) => {
     socket.join(room);
     rooms[room].users.push(socket.id);
     socket.emit('room created', room);
-    // Notify that this user joined the room they created
+    
+    // Send empty member list to room creator (they're the first one)
+    socket.emit('room members', []);
+    
+    // Notify that this user joined the room they created (no one else to notify yet)
     socket.to(room).emit('user joined', { userId: socket.id, username: socket.username });
     console.log(`Room ${room} created and user ${socket.id} joined`);
   });
@@ -44,6 +48,19 @@ io.on('connection', (socket) => {
       socket.join(room);
       rooms[room].users.push(socket.id);
       socket.emit('joined room', room);
+      
+      // Send current member list to the new joiner
+      const currentMembers = rooms[room].users.map(userId => {
+        const memberSocket = io.sockets.sockets.get(userId);
+        return {
+          userId: userId,
+          username: memberSocket?.username || userId
+        };
+      }).filter(member => member.userId !== socket.id); // Exclude the current user
+      
+      socket.emit('room members', currentMembers);
+      
+      // Notify existing members that this user joined
       socket.to(room).emit('user joined', { userId: socket.id, username: socket.username });
       console.log(`User ${socket.id} joined room ${room}`);
     } else {

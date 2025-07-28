@@ -228,6 +228,11 @@ function Chat({ room, username, onShowSettings }) {
       setMessages((prevMessages) => [...prevMessages, data]);
     });
 
+    socket.on('room members', (members) => {
+      console.log('👥 Room members received:', members);
+      setOnlineUsers(members);
+    });
+
     socket.on('user joined', (data) => {
       console.log('👋 User joined:', data);
       setMessages((prevMessages) => [...prevMessages, { 
@@ -273,6 +278,7 @@ function Chat({ room, username, onShowSettings }) {
 
     return () => {
       socket.off('chat message');
+      socket.off('room members');
       socket.off('user joined');
       socket.off('user left');
       socket.off('typing');
