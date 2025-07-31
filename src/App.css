@@ -25,8 +25,59 @@
   --message-hover: #f1f5f9;
 }
 
+/* Dark theme */
+[data-theme="dark"] {
+  --background: #0f0f0f;
+  --foreground: #fafafa;
+  --card: #0f0f0f;
+  --card-foreground: #fafafa;
+  --popover: #0f0f0f;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #0f0f0f;
+  --secondary: #1e293b;
+  --secondary-foreground: #fafafa;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #1e293b;
+  --accent-foreground: #fafafa;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #fafafa;
+  --border: #1e293b;
+  --input: #1e293b;
+  --ring: #334155;
+  --chat-bg: #020817;
+  --message-hover: #1e293b;
+}
+
+/* Light theme */
+[data-theme="light"] {
+  --background: #ffffff;
+  --foreground: #0f0f0f;
+  --card: #ffffff;
+  --card-foreground: #0f0f0f;
+  --popover: #ffffff;
+  --popover-foreground: #0f0f0f;
+  --primary: #0f0f0f;
+  --primary-foreground: #fafafa;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #94a3b8;
+  --chat-bg: #f8fafc;
+  --message-hover: #f1f5f9;
+}
+
+/* Auto theme - follows system preference */
 @media (prefers-color-scheme: dark) {
-  :root {
+  [data-theme="auto"] {
     --background: #0f0f0f;
     --foreground: #fafafa;
     --card: #0f0f0f;
@@ -48,6 +99,32 @@
     --ring: #334155;
     --chat-bg: #020817;
     --message-hover: #1e293b;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  [data-theme="auto"] {
+    --background: #ffffff;
+    --foreground: #0f0f0f;
+    --card: #ffffff;
+    --card-foreground: #0f0f0f;
+    --popover: #ffffff;
+    --popover-foreground: #0f0f0f;
+    --primary: #0f0f0f;
+    --primary-foreground: #fafafa;
+    --secondary: #f1f5f9;
+    --secondary-foreground: #0f172a;
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
+    --accent: #f1f5f9;
+    --accent-foreground: #0f172a;
+    --destructive: #ef4444;
+    --destructive-foreground: #fafafa;
+    --border: #e2e8f0;
+    --input: #e2e8f0;
+    --ring: #94a3b8;
+    --chat-bg: #f8fafc;
+    --message-hover: #f1f5f9;
   }
 }
 
@@ -78,7 +155,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000000;
+  background: var(--background);
   padding: 2rem;
 }
 
@@ -102,8 +179,8 @@ body {
 
 .logo-icon {
   font-size: 3rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--accent);
+  border: 1px solid var(--border);
   border-radius: 1rem;
   padding: 1rem;
   backdrop-filter: blur(10px);
@@ -112,13 +189,13 @@ body {
 .logo-text {
   font-size: 3rem;
   font-weight: 700;
-  color: white;
+  color: var(--foreground);
   margin: 0;
 }
 
 .logo-subtitle {
   font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--muted-foreground);
   margin: 0;
 }
 
@@ -132,18 +209,20 @@ body {
 
 /* Card Styles */
 .card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 1rem;
   padding: 2rem;
   backdrop-filter: blur(10px);
   transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .card:hover {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--accent);
+  border-color: var(--ring);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
@@ -153,12 +232,12 @@ body {
 .card-title {
   font-size: 1.5rem;
   font-weight: 600;
-  color: white;
+  color: var(--card-foreground);
   margin: 0 0 0.5rem 0;
 }
 
 .card-description {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--muted-foreground);
   margin: 0;
 }
 
@@ -187,36 +266,37 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #333333 0%, #111111 100%);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--border);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #444444 0%, #222222 100%);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--primary);
+  opacity: 0.9;
+  border-color: var(--ring);
   transform: translateY(-1px);
 }
 
 .btn-outline {
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border);
   background-color: transparent;
-  color: white;
+  color: var(--foreground);
 }
 
 .btn-outline:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--accent);
+  border-color: var(--ring);
   transform: translateY(-1px);
 }
 
 .btn-ghost {
   background-color: transparent;
-  color: white;
+  color: var(--foreground);
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--accent);
 }
 
 .btn-sm {
@@ -241,8 +321,8 @@ body {
 }
 
 .modal {
-  background: #111111;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 0;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
@@ -273,7 +353,7 @@ body {
   font-size: 1.125rem;
   font-weight: 600;
   margin: 0;
-  color: white;
+  color: var(--card-foreground);
 }
 
 .modal-close {
@@ -281,7 +361,7 @@ body {
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--muted-foreground);
   padding: 0;
   width: 2rem;
   height: 2rem;
@@ -292,8 +372,8 @@ body {
 }
 
 .modal-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: var(--accent);
+  color: var(--foreground);
 }
 
 .modal-form {
@@ -307,22 +387,22 @@ body {
 .input {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
+  background: var(--input);
+  color: var(--foreground);
   font-size: 0.875rem;
   transition: border-color 0.2s;
 }
 
 .input:focus {
   outline: none;
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--ring);
+  background: var(--accent);
 }
 
 .input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--muted-foreground);
 }
 
 .modal-actions {
@@ -341,12 +421,12 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #000000;
+  background-color: var(--chat-bg);
 }
 
 .chat-header {
-  background: #111111;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
   padding: 1rem 1.5rem;
   display: flex;
   align-items: center;
@@ -362,12 +442,12 @@ body {
 .channel-name {
   font-weight: 600;
   font-size: 1.125rem;
-  color: white;
+  color: var(--card-foreground);
 }
 
 .channel-topic {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--muted-foreground);
 }
 
 .header-actions {
@@ -390,13 +470,13 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  background: #000000;
+  background: var(--background);
 }
 
 .welcome-message {
   text-align: center;
   padding: 2rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--muted-foreground);
 }
 
 .welcome-icon {
@@ -406,7 +486,7 @@ body {
 
 .welcome-message h3 {
   margin: 0 0 0.5rem 0;
-  color: white;
+  color: var(--foreground);
 }
 
 .welcome-message p {
@@ -422,26 +502,26 @@ body {
 }
 
 .message:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--message-hover);
 }
 
 .system-message {
   justify-content: center;
   font-style: italic;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--muted-foreground);
   font-size: 0.875rem;
 }
 
 .message-avatar {
   width: 2.5rem;
   height: 2.5rem;
-  background: linear-gradient(135deg, #333333 0%, #111111 100%);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--secondary);
+  border: 1px solid var(--border);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--secondary-foreground);
   font-weight: 600;
   font-size: 0.875rem;
   flex-shrink: 0;
@@ -461,23 +541,23 @@ body {
 
 .message-username {
   font-weight: 600;
-  color: white;
+  color: var(--foreground);
   font-size: 0.875rem;
 }
 
 .message-timestamp {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--muted-foreground);
 }
 
 .message-text {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--foreground);
   word-wrap: break-word;
   line-height: 1.4;
 }
 
 .own-message .message-username {
-  color: #00ff88;
+  color: var(--primary);
 }
 
 /* Typing Indicator */
@@ -525,8 +605,8 @@ body {
 /* Message Input */
 .message-input-container {
   padding: 1rem 1.5rem;
-  background: #111111;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card);
+  border-top: 1px solid var(--border);
 }
 
 .message-form {
@@ -537,8 +617,8 @@ body {
   position: relative;
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--input);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
   gap: 0.5rem;
@@ -617,26 +697,26 @@ body {
   padding: 0.75rem 1rem;
   border: none;
   background: transparent;
-  color: white;
+  color: var(--foreground);
   font-size: 0.875rem;
   outline: none;
 }
 
 .message-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--muted-foreground);
 }
 
 .send-button {
   background: none;
   border: none;
   padding: 0.75rem 1rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--muted-foreground);
   cursor: pointer;
   transition: color 0.2s;
 }
 
 .send-button:hover:not(:disabled) {
-  color: white;
+  color: var(--foreground);
 }
 
 .send-button:disabled {
@@ -800,7 +880,7 @@ body {
 
 .drawing-canvas {
   display: block;
-  background: #000000;
+  background: var(--background);
   cursor: crosshair;
   border-radius: 0 0 var(--radius) var(--radius);
 }

@@ -22,6 +22,10 @@ function App() {
     if (savedUsername) {
       setUsername(savedUsername);
     }
+    
+    // Load and apply theme
+    const savedTheme = localStorage.getItem('deltaTheme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
   }, []);
 
   // Handle username changes and save to localStorage
@@ -333,6 +337,11 @@ function Chat({ room, username, onShowSettings }) {
 
   const toggleCanvas = () => {
     setShowCanvas(!showCanvas);
+    
+    // When opening canvas, notify other users to sync their canvas state
+    if (!showCanvas) {
+      socket.emit('canvas-opened', { room, username });
+    }
   };
 
   const handleFileUpload = (e) => {
@@ -599,7 +608,10 @@ function SettingsModal({ onClose, username, onUsernameChange }) {
   const [tempUsername, setTempUsername] = useState(username || '');
   const [notifications, setNotifications] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState(() => {
+    // Initialize with current theme from localStorage
+    return localStorage.getItem('deltaTheme') || 'dark';
+  });
 
   // Load settings on modal open
   useEffect(() => {
@@ -633,8 +645,17 @@ function SettingsModal({ onClose, username, onUsernameChange }) {
     localStorage.setItem('deltaSoundEnabled', soundEnabled.toString());
     localStorage.setItem('deltaTheme', theme);
     
+    // Apply theme immediately
+    document.documentElement.setAttribute('data-theme', theme);
+    
     // Close modal
     onClose();
+  };
+
+  // Apply theme immediately when changed in dropdown (before saving)
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
   };
 
   const exportData = () => {
@@ -714,7 +735,7 @@ function SettingsModal({ onClose, username, onUsernameChange }) {
               <select
                 id="theme"
                 value={theme}
-                onChange={(e) => setTheme(e.target.value)}
+                onChange={(e) => handleThemeChange(e.target.value)}
                 className="form-select"
               >
                 <option value="dark">Dark</option>
@@ -766,7 +787,14 @@ function CollaborativeCanvas({ room, username, onClose }) {
     newHistory.push(imageData);
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-  }, [history, historyIndex]);
+    
+    // Save canvas state to server for persistence
+    socket.emit('canvas-save-state', {
+      room,
+      imageData,
+      username
+    });
+  }, [history, historyIndex, room, username]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -782,8 +810,9 @@ function CollaborativeCanvas({ room, username, onClose }) {
       ctx.lineJoin = 'round';
       canvas.dataset.initialized = 'true';
       
-      // Save initial state to history
-      saveToHistory(canvas);
+      // Request current canvas state from server when opening canvas
+      console.log('🎨 Requesting canvas state for room:', room);
+      socket.emit('request-canvas-state', { room, username });
     }
 
     console.log('🎨 Setting up canvas listeners for room:', room);
@@ -834,15 +863,57 @@ function CollaborativeCanvas({ room, username, onClose }) {
       }
     };
 
+    const handleCanvasState = (data) => {
+      console.log('🎨 Received canvas-state event:', data);
+      if (data.room === room && data.imageData && canvasRef.current) {
+        const ctx = canvasRef.current.getContext('2d');
+        const canvas = canvasRef.current;
+        const img = new Image();
+        img.onload = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+          // Update local history with received state
+          setHistory([data.imageData]);
+          setHistoryIndex(0);
+        };
+        img.src = data.imageData;
+      } else if (data.room === room && !data.imageData && canvasRef.current) {
+        // No existing state, save initial blank state
+        const canvas = canvasRef.current;
+        setTimeout(() => {
+          saveToHistory(canvas);
+        }, 100);
+      }
+    };
+
+    const handleCanvasSyncRequest = (data) => {
+      console.log('🎨 Canvas sync requested by:', data.username);
+      // If we have canvas open and have content, send our current state
+      if (canvasRef.current && history.length > 0 && historyIndex >= 0) {
+        const currentState = canvasRef.current.toDataURL();
+        socket.emit('canvas-save-state', {
+          room,
+          imageData: currentState,
+          username
+        });
+      }
+    };
+
     socket.on('canvas-draw', handleCanvasDraw);
     socket.on('canvas-clear', handleCanvasClear);
     socket.on('canvas-undo', handleCanvasUndo);
+    socket.on('canvas-state', handleCanvasState);
+    socket.on('canvas-sync-request', handleCanvasSyncRequest);
 
     return () => {
       console.log('🎨 Cleaning up canvas listeners');
       socket.off('canvas-draw', handleCanvasDraw);
       socket.off('canvas-clear', handleCanvasClear);
       socket.off('canvas-undo', handleCanvasUndo);
+      socket.off('canvas-state', handleCanvasState);
+      socket.off('canvas-sync-request', handleCanvasSyncRequest);
     };
   }, [room, saveToHistory]);
 
@@ -991,8 +1062,11 @@ function CollaborativeCanvas({ room, username, onClose }) {
       });
     }
 
-    // Save to history after drawing
-    saveToHistory(canvasRef.current);
+    // Save to history after drawing (but debounce to avoid too many saves)
+    clearTimeout(window.canvasSaveTimeout);
+    window.canvasSaveTimeout = setTimeout(() => {
+      saveToHistory(canvasRef.current);
+    }, 500);
     setStartPos(null);
   };
 

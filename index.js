@@ -19,6 +19,7 @@ const io = new Server(server, {
 app.use(express.static(path.join(__dirname, 'build')));
 
 const rooms = {};
+const canvasStates = {}; // Store canvas states for each room
 
 io.on('connection', (socket) => {
   console.log('a user connected');
@@ -26,6 +27,7 @@ io.on('connection', (socket) => {
   socket.on('create room', () => {
     const room = Math.random().toString(36).substring(2, 12);
     rooms[room] = { users: [] };
+    canvasStates[room] = null; // Initialize canvas state
     socket.join(room);
     rooms[room].users.push(socket.id);
     socket.emit('room created', room);
@@ -59,6 +61,11 @@ io.on('connection', (socket) => {
       }).filter(member => member.userId !== socket.id); // Exclude the current user
       
       socket.emit('room members', currentMembers);
+      
+      // Send current canvas state to the new joiner if it exists
+      if (canvasStates[room]) {
+        socket.emit('canvas-state', { room, imageData: canvasStates[room] });
+      }
       
       // Notify existing members that this user joined
       socket.to(room).emit('user joined', { userId: socket.id, username: socket.username });
@@ -95,12 +102,35 @@ io.on('connection', (socket) => {
 
   socket.on('canvas-clear', (data) => {
     console.log('Canvas clear event received:', data);
+    canvasStates[data.room] = null; // Clear stored state
     socket.to(data.room).emit('canvas-clear', data);
   });
 
   socket.on('canvas-undo', (data) => {
     console.log('Canvas undo event received:', data);
+    if (data.imageData) {
+      canvasStates[data.room] = data.imageData; // Update stored state
+    }
     socket.to(data.room).emit('canvas-undo', data);
+  });
+
+  socket.on('canvas-save-state', (data) => {
+    console.log('Canvas state save received for room:', data.room);
+    canvasStates[data.room] = data.imageData;
+  });
+
+  socket.on('request-canvas-state', (data) => {
+    console.log('Canvas state requested for room:', data.room);
+    if (canvasStates[data.room]) {
+      socket.emit('canvas-state', { room: data.room, imageData: canvasStates[data.room] });
+    }
+  });
+
+  socket.on('canvas-opened', (data) => {
+    console.log('Canvas opened by user in room:', data.room);
+    // Broadcast to all users in room that someone opened canvas
+    // This triggers them to sync their canvas state if they have it open
+    socket.to(data.room).emit('canvas-sync-request', data);
   });
 
   socket.on('file share', (data) => {
